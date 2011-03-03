@@ -2,12 +2,118 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    >
-<TextView  
-    android:layout_width="fill_parent" 
-    android:layout_height="wrap_content" 
-    android:text="Hello World, Calc"
-    />
+    android:layout_height="fill_parent">
+    <TextView
+        android:id="@+id/display"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:gravity="right"
+        android:textSize="60sp"
+        android:paddingTop="10sp"
+        android:paddingBottom="10sp"
+        android:paddingLeft="20sp"
+        android:paddingRight="20sp"
+        />
+    <TableLayout
+        android:id="@+id/buttons"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:stretchColumns="0,1,2,3">
+        
+        <TableRow>
+            <Button
+                android:id="@+id/digit1"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="1"/>
+            <Button
+                android:id="@+id/digit2"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="2"/>
+            <Button
+                android:id="@+id/digit3"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="3"/>
+            
+            <Button
+                android:id="@+id/operationDivide"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="÷"/>
+        </TableRow>
+        
+        <TableRow>
+            <Button
+                android:id="@+id/digit4"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="4"/>
+            <Button
+                android:id="@+id/digit5"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="5"/>
+            <Button
+                android:id="@+id/digit6"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="6"/>
+                
+            <Button
+                android:id="@+id/operationMultiply"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="×"/>
+        </TableRow>
+        
+        <TableRow>
+            <Button
+                android:id="@+id/digit7"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="7"/>
+            <Button
+                android:id="@+id/digit8"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="8"/>
+            <Button
+                android:id="@+id/digit9"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="9"/>
+            <Button
+                android:id="@+id/operationSubtract"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="−"/>
+        </TableRow>
+        
+        <TableRow>
+            <Button
+                android:id="@+id/digitPeriod"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="."/>
+            <Button
+                android:id="@+id/digit0"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="0"/>
+            <Button
+                android:id="@+id/operationEquals"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="="/>
+            <Button
+                android:id="@+id/operationAdd"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:text="+"/>
+        </TableRow>
+    </TableLayout>
 </LinearLayout>
 
