@@ -16,7 +16,8 @@ public class Calc extends Activity
     private Operation operation = null;
     
     private float previous;
-    private int previousLength;
+    private int previousLength = 0;
+    private boolean hasPeriod = false;
     
     private Button digitButtons[];
     private Button operationButtons[];
@@ -72,17 +73,22 @@ public class Calc extends Activity
             button.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     Button b = (Button) v;
-                    switch(state) {
-                        case INITIAL:
-                        case ANSWER:
-                            display.setText(b.getText());
-                            break;
-                        case OPERATION:
-                        case NUMBER:
-                            display.append(b.getText());
-                            break;
+                    CharSequence s = b.getText();
+                    if (! ".".equals(s) || hasPeriod == false) {
+                        if (".".equals(s))
+                            hasPeriod = true;
+                        switch(state) {
+                            case INITIAL:
+                            case ANSWER:
+                                display.setText(s);
+                                break;
+                            case OPERATION:
+                            case NUMBER:
+                                display.append(s);
+                                break;
+                        }
+                        state = State.NUMBER;
                     }
-                    state = State.NUMBER;
                 }
             });
         }
@@ -91,33 +97,46 @@ public class Calc extends Activity
             button.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     Button b = (Button) v;
-                    setPrevious(display.getText());
                     CharSequence operator = b.getText();
-                    display.append(operator);
-                    
-                    switch(operator.toString().charAt(0)) {
-                        case '÷':
-                            operation = Operation.DIVIDE;
+                    switch (state) {
+                        case NUMBER:
+                        case ANSWER:
+                            setPrevious(display.getText());
+                            display.append(operator);
+                            
+                            state = State.OPERATION;
                             break;
-                        case '×':
-                            operation = Operation.MULTIPLY;
-                            break;
-                        case '−':
-                            operation = Operation.SUBTRACT;
-                            break;
-                        case '+':
-                            operation = Operation.ADD;
+                        case OPERATION:
+                            String p = display.getText().toString();
+                            display.setText(p.substring(0, p.length()-1) + b.getText());
                             break;
                     }
                     
-                    state = State.OPERATION;
+                    if (previousLength > 0) {
+                        switch(operator.toString().charAt(0)) {
+                            case '÷':
+                                operation = Operation.DIVIDE;
+                                break;
+                            case '×':
+                                operation = Operation.MULTIPLY;
+                                break;
+                            case '−':
+                                operation = Operation.SUBTRACT;
+                                break;
+                            case '+':
+                                operation = Operation.ADD;
+                                break;
+                        }
+                    }
+                    
+                    hasPeriod = false;
                 }
             });
         }
         
         operationEquals.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (state == State.NUMBER) {
+                if (state == State.NUMBER && previousLength > 0) {
                     Button b = (Button) v;
                     float current = Float.valueOf(display.getText().toString().substring(previousLength+1)).floatValue();
                     float result = 0.0f;
@@ -142,8 +161,15 @@ public class Calc extends Activity
                     else
                         visualResult = Float.toString(result);
                     
-                    display.setText(visualResult);
                     state = State.ANSWER;
+                    
+                    if ("Infinity".equals(visualResult)) {
+                        visualResult = "∞";
+                        state = State.INITIAL;
+                    }
+                    
+                    display.setText(visualResult);
+                    hasPeriod = false;
                 }
             }
         });
