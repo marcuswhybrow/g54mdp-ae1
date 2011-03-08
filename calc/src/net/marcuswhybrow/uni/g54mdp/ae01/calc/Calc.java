@@ -41,7 +41,10 @@ public class Calc extends Activity
         for (Button button : digitButtons) {
             button.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    display.append(((Button) v).getText());
+                    if ("0".equals(display.getText()))
+                        display.setText(((Button) v).getText());
+                    else
+                        display.append(((Button) v).getText());
                 }
             });
         }

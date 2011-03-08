@@ -15,7 +15,6 @@
         android:paddingLeft="20sp"
         android:paddingRight="20sp"
         android:singleLine="true"
-        android:ellipsize="false"
         />
     <TableLayout
         android:id="@+id/buttons"
