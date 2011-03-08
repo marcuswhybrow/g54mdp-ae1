@@ -38,13 +38,30 @@ public class Calc extends Activity
         Button operationSubtract = (Button) findViewById(R.id.operationSubtract);
         Button operationAdd = (Button) findViewById(R.id.operationAdd);
         
+        Button operationButtons[] = {
+            operationDivide,
+            operationMultiply,
+            operationSubtract,
+            operationAdd
+        };
+        
         for (Button button : digitButtons) {
             button.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
+                    Button b = (Button) v;
                     if ("0".equals(display.getText()))
-                        display.setText(((Button) v).getText());
+                        display.setText(b.getText());
                     else
-                        display.append(((Button) v).getText());
+                        display.append(b.getText());
+                }
+            });
+        }
+        
+        for (Button button : operationButtons) {
+            button.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    Button b = (Button) v;
+                    display.setText(b.getText());
                 }
             });
         }
