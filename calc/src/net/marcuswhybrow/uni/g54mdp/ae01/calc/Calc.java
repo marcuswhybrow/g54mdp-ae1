@@ -28,10 +28,10 @@ public class Calc extends Activity
             (Button) findViewById(R.id.digit6),
             (Button) findViewById(R.id.digit7),
             (Button) findViewById(R.id.digit8),
-            (Button) findViewById(R.id.digit9)
+            (Button) findViewById(R.id.digit9),
+            (Button) findViewById(R.id.digitPeriod)
         };
         
-        Button digitPeriod = (Button) findViewById(R.id.digitPeriod);
         Button operationEquals = (Button) findViewById(R.id.operationEquals);
         Button operationDivide = (Button) findViewById(R.id.operationDivide);
         Button operationMultiply = (Button) findViewById(R.id.operationMultiply);
@@ -65,5 +65,14 @@ public class Calc extends Activity
                 }
             });
         }
+        
+        operationEquals.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Button b = (Button) v;
+                display.setText(b.getText());
+            }
+        });
+        
+        
     }
 }
