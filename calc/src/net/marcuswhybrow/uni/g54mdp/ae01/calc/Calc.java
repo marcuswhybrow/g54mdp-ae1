@@ -181,8 +181,14 @@ public class Calc extends Activity
                     Button b = (Button) v;
                     if (display.getText().length() > 0) {
                         CharSequence operator = b.getText();
+                        
+                        if (state == State.NUM2) {
+                            display.setText(getAnswer(display.getText()));
+                        }
+                        
                         switch (state) {
                             case NUM1:
+                            case NUM2:
                             case ANSWER:
                                 setPrevious(display.getText());
                                 display.append(operator);
@@ -192,9 +198,6 @@ public class Calc extends Activity
                             case OPERATION:
                                 String p = display.getText().toString();
                                 display.setText(p.substring(0, p.length()-1) + b.getText());
-                                break;
-                            case NUM2:
-                                
                                 break;
                         }
                     
