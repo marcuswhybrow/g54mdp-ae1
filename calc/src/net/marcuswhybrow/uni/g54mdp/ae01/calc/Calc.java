@@ -55,11 +55,8 @@ public class Calc extends Activity
                 if (t.toString().length() > 0) {
                     String s = t.toString().substring(0, t.length()-1);
                     if (state == State.NUM2) {
-                        try {
-                            // expects a number or a operation character
-                            // vulnerable to a period I think
-                            Float.valueOf(s.charAt(s.length()-1));
-                        } catch(NumberFormatException nfe) {
+                        Character c = s.charAt(s.length() - 1);
+                        if (!(Character.isDigit(c) || c == '.')) {
                             state = State.OPERATION;
                         }
                     }
@@ -70,6 +67,45 @@ public class Calc extends Activity
                 return "";
         }
         return t;
+    }
+    
+    private CharSequence getAnswer(CharSequence cs) {
+        if (state == State.NUM2) {
+            Log.d(TAG, "display: " + cs);
+            float current = Float.valueOf(cs.toString().substring(previousLength+1)).floatValue();
+            float result = Float.NaN;
+            switch(operation) {
+                case DIVIDE:
+                    result = previous / current;
+                    break;
+                case MULTIPLY:
+                    result = previous * current;
+                    break;
+                case SUBTRACT:
+                    result = previous - current;
+                    break;
+                case ADD:
+                    result = previous + current;
+                    break;
+            }
+            
+            String visualResult;
+            if ((int) result == result)
+                visualResult = Integer.toString((int) result);
+            else
+                visualResult = Float.toString(result);
+            
+            state = State.ANSWER;
+            
+            if ("Infinity".equals(visualResult)) {
+                visualResult = "∞";
+                state = State.INITIAL;
+            }
+            
+            hasPeriod = false;
+            return visualResult;
+        }
+        return cs;
     }
     
     /** Called when the activity is first created. */
@@ -124,6 +160,9 @@ public class Calc extends Activity
                                 display.setText(s);
                                 break;
                             case OPERATION:
+                                state = State.NUM2;
+                                display.append(s);
+                                break;
                             case NUM1:
                             case NUM2:
                                 display.append(s);
@@ -184,42 +223,7 @@ public class Calc extends Activity
         
         operationEquals.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if ((state == State.NUM1 || state == State.NUM2) && previousLength > 0) {
-                    Button b = (Button) v;
-                    Log.d(TAG, "previous length: " + previousLength);
-                    float current = Float.valueOf(display.getText().toString().substring(previousLength+1)).floatValue();
-                    float result = Float.NaN;
-                    switch(operation) {
-                        case DIVIDE:
-                            result = previous / current;
-                            break;
-                        case MULTIPLY:
-                            result = previous * current;
-                            break;
-                        case SUBTRACT:
-                            result = previous - current;
-                            break;
-                        case ADD:
-                            result = previous + current;
-                            break;
-                    }
-                    
-                    String visualResult;
-                    if ((int) result == result)
-                        visualResult = Integer.toString((int) result);
-                    else
-                        visualResult = Float.toString(result);
-                    
-                    state = State.ANSWER;
-                    
-                    if ("Infinity".equals(visualResult)) {
-                        visualResult = "∞";
-                        state = State.INITIAL;
-                    }
-                    
-                    display.setText(visualResult);
-                    hasPeriod = false;
-                }
+                display.setText(getAnswer(display.getText()));
             }
         });
         
