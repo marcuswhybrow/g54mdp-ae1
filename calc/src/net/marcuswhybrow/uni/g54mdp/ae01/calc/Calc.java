@@ -7,9 +7,11 @@ import android.widget.TextView;
 import android.widget.Button;
 import android.widget.AdapterView.OnItemClickListener;
 
+import android.util.Log;
+
 public class Calc extends Activity
 {
-    private enum State { INITIAL, NUMBER, OPERATION, ANSWER }
+    private enum State { INITIAL, NUM1, OPERATION, NUM2, ANSWER }
     private enum Operation { DIVIDE, MULTIPLY, SUBTRACT, ADD }
     
     private State state = State.INITIAL;
@@ -28,9 +30,46 @@ public class Calc extends Activity
     private Button operationSubtract;
     private Button operationAdd;
     
+    private Button clear;
+    
+    private static final String TAG = "Calc";
+    
     private void setPrevious(CharSequence s) {
-        this.previous = Float.valueOf(s.toString()).floatValue();
+        if (s.length() > 0)
+            this.previous = Float.valueOf(s.toString()).floatValue();
         this.previousLength = s.length();
+    }
+    
+    private CharSequence clearDisplay(CharSequence t) {
+        switch(state) {
+            case INITIAL:
+                // do nothing
+                break;
+            case OPERATION:
+                operation = null;
+                state = State.NUM1;
+                // no break here!
+                setPrevious("");
+            case NUM1:
+            case NUM2:
+                if (t.toString().length() > 0) {
+                    String s = t.toString().substring(0, t.length()-1);
+                    if (state == State.NUM2) {
+                        try {
+                            // expects a number or a operation character
+                            // vulnerable to a period I think
+                            Float.valueOf(s.charAt(s.length()-1));
+                        } catch(NumberFormatException nfe) {
+                            state = State.OPERATION;
+                        }
+                    }
+                    return s;
+                }
+                break;
+            case ANSWER:
+                return "";
+        }
+        return t;
     }
     
     /** Called when the activity is first created. */
@@ -62,6 +101,8 @@ public class Calc extends Activity
         operationSubtract = (Button) findViewById(R.id.operationSubtract);
         operationAdd = (Button) findViewById(R.id.operationAdd);
         
+        clear = (Button) findViewById(R.id.clear);
+        
         operationButtons = new Button[] {
             operationDivide,
             operationMultiply,
@@ -83,11 +124,13 @@ public class Calc extends Activity
                                 display.setText(s);
                                 break;
                             case OPERATION:
-                            case NUMBER:
+                            case NUM1:
+                            case NUM2:
                                 display.append(s);
                                 break;
                         }
-                        state = State.NUMBER;
+                        if (state != State.NUM1 && state != State.NUM2)
+                            state = State.NUM1;
                     }
                 }
             });
@@ -97,49 +140,55 @@ public class Calc extends Activity
             button.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     Button b = (Button) v;
-                    CharSequence operator = b.getText();
-                    switch (state) {
-                        case NUMBER:
-                        case ANSWER:
-                            setPrevious(display.getText());
-                            display.append(operator);
+                    if (display.getText().length() > 0) {
+                        CharSequence operator = b.getText();
+                        switch (state) {
+                            case NUM1:
+                            case ANSWER:
+                                setPrevious(display.getText());
+                                display.append(operator);
                             
-                            state = State.OPERATION;
-                            break;
-                        case OPERATION:
-                            String p = display.getText().toString();
-                            display.setText(p.substring(0, p.length()-1) + b.getText());
-                            break;
-                    }
-                    
-                    if (previousLength > 0) {
-                        switch(operator.toString().charAt(0)) {
-                            case '÷':
-                                operation = Operation.DIVIDE;
+                                state = State.OPERATION;
                                 break;
-                            case '×':
-                                operation = Operation.MULTIPLY;
+                            case OPERATION:
+                                String p = display.getText().toString();
+                                display.setText(p.substring(0, p.length()-1) + b.getText());
                                 break;
-                            case '−':
-                                operation = Operation.SUBTRACT;
-                                break;
-                            case '+':
-                                operation = Operation.ADD;
+                            case NUM2:
+                                
                                 break;
                         }
-                    }
                     
-                    hasPeriod = false;
+                        if (previousLength > 0) {
+                            switch(operator.toString().charAt(0)) {
+                                case '÷':
+                                    operation = Operation.DIVIDE;
+                                    break;
+                                case '×':
+                                    operation = Operation.MULTIPLY;
+                                    break;
+                                case '−':
+                                    operation = Operation.SUBTRACT;
+                                    break;
+                                case '+':
+                                    operation = Operation.ADD;
+                                    break;
+                            }
+                        }
+                    
+                        hasPeriod = false;
+                    }
                 }
             });
         }
         
         operationEquals.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (state == State.NUMBER && previousLength > 0) {
+                if ((state == State.NUM1 || state == State.NUM2) && previousLength > 0) {
                     Button b = (Button) v;
+                    Log.d(TAG, "previous length: " + previousLength);
                     float current = Float.valueOf(display.getText().toString().substring(previousLength+1)).floatValue();
-                    float result = 0.0f;
+                    float result = Float.NaN;
                     switch(operation) {
                         case DIVIDE:
                             result = previous / current;
@@ -171,6 +220,12 @@ public class Calc extends Activity
                     display.setText(visualResult);
                     hasPeriod = false;
                 }
+            }
+        });
+        
+        clear.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                display.setText(clearDisplay(display.getText()));
             }
         });
     }
