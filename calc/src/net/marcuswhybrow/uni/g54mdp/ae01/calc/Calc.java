@@ -60,6 +60,15 @@ public class Calc {
         }
     }
     
+    private boolean isNum1Valid() {
+        try {
+            new BigDecimal(num1String);
+            return true;
+        } catch(NumberFormatException nfe) {
+            return false;
+        }
+    }
+    
     private void changeNum2(String num2String) {
         this.num2String = num2String;
         try {
@@ -75,6 +84,15 @@ public class Calc {
             this.num2String = num2.toBigIntegerExact().toString();
         } catch(ArithmeticException ae) {
             this.num2String = num2.toString();
+        }
+    }
+    
+    private boolean isNum2Valid() {
+        try {
+            new BigDecimal(num2String);
+            return true;
+        } catch(NumberFormatException nfe) {
+            return false;
         }
     }
     
@@ -99,8 +117,8 @@ public class Calc {
     }
     
     public void selectOperation(BinaryOperation operation) {
-        if (state != State.INITIAL) {
-            if (state == State.NUM2) {
+        if (state != State.INITIAL && this.isNum1Valid()) {
+            if (state == State.NUM2 && this.isNum2Valid()) {
                 this.changeNum1(this.getAnswer());
                 this.changeNum2("");
             }
@@ -165,7 +183,7 @@ public class Calc {
     }
     
     public void selectEquals() {
-        if (state == State.NUM2) {
+        if (state == State.NUM2 && this.isNum2Valid()) {
             BigDecimal answer = this.getAnswer();
             this.changeNum1(answer);
             this.changeNum2("");
