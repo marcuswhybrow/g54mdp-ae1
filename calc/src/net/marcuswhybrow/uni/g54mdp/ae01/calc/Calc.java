@@ -121,6 +121,7 @@ public class Calc {
             if (state == State.NUM2 && this.isNum2Valid()) {
                 this.changeNum1(this.getAnswer());
                 this.changeNum2("");
+                this.currentNumHasDecimalPoint = false;
             }
         
             this.changeOperation(operation);
@@ -160,14 +161,24 @@ public class Calc {
     public void selectClear() {
         switch(state) {
             case NUM1:
-                if (this.num1String.length() > 0)
+                if (this.num1String.length() > 0) {
+                    char removedChar = this.num1String.charAt(this.num1String.length() - 1);
                     this.changeNum1(this.num1String.substring(0, this.num1String.length() - 1));
+                    
+                    if (removedChar == '.')
+                        this.currentNumHasDecimalPoint = false;
+                }   
                 break;
             case NUM2:
-                if (this.num2String.length() > 1)
+                if (this.num2String.length() > 1) {
+                    char removedChar = this.num2String.charAt(this.num2String.length() - 1);
                     this.changeNum2(this.num2String.substring(0, this.num2String.length() - 1));
-                else {
+                    
+                    if (removedChar == '.')
+                        this.currentNumHasDecimalPoint = false;
+                } else {
                     this.changeNum2("");
+                    this.currentNumHasDecimalPoint = false;
                     state = State.OPERATION;
                 }
                 break;
@@ -177,6 +188,7 @@ public class Calc {
                 break;
             case ANSWER:
                 this.changeNum1("");
+                this.currentNumHasDecimalPoint = false;
                 state = State.NUM1;
         }
         this.updateDisplay();
@@ -187,6 +199,7 @@ public class Calc {
             BigDecimal answer = this.getAnswer();
             this.changeNum1(answer);
             this.changeNum2("");
+            this.currentNumHasDecimalPoint = false;
             this.changeOperation(null);
             if (answer instanceof BinaryOperation.BigDecimalInfinity)
                 state = State.INITIAL;
