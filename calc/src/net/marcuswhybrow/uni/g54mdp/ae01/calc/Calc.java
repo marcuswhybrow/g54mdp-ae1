@@ -6,6 +6,9 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Button;
 import android.widget.AdapterView.OnItemClickListener;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
 import android.util.Log;
 
@@ -17,7 +20,7 @@ public class Calc extends Activity
     private State state = State.INITIAL;
     private Operation operation = null;
     
-    private float previous;
+    private BigDecimal previous;
     private int previousLength = 0;
     private boolean hasPeriod = false;
     
@@ -33,10 +36,11 @@ public class Calc extends Activity
     private Button clear;
     
     private static final String TAG = "Calc";
+    MathContext mathContext;
     
     private void setPrevious(CharSequence s) {
         if (s.length() > 0)
-            this.previous = Float.valueOf(s.toString()).floatValue();
+            this.previous = new BigDecimal(s.toString());
         this.previousLength = s.length();
     }
     
@@ -72,28 +76,37 @@ public class Calc extends Activity
     private CharSequence getAnswer(CharSequence cs) {
         if (state == State.NUM2) {
             Log.d(TAG, "display: " + cs);
-            float current = Float.valueOf(cs.toString().substring(previousLength+1)).floatValue();
-            float result = Float.NaN;
+            BigDecimal current = new BigDecimal(cs.toString().substring(previousLength+1));
+            BigDecimal result = null;
             switch(operation) {
                 case DIVIDE:
-                    result = previous / current;
+                    try {
+                        result = previous.divide(current, this.mathContext);
+                    } catch(ArithmeticException ae) {
+                        state = State.INITIAL;
+                        hasPeriod = false;
+                        return "∞";
+                    }
                     break;
                 case MULTIPLY:
-                    result = previous * current;
+                    result = previous.multiply(current, this.mathContext);
                     break;
                 case SUBTRACT:
-                    result = previous - current;
+                    result = previous.subtract(current, this.mathContext);
                     break;
                 case ADD:
-                    result = previous + current;
+                    result = previous.add(current, this.mathContext);
                     break;
             }
             
             String visualResult;
-            if ((int) result == result)
-                visualResult = Integer.toString((int) result);
-            else
-                visualResult = Float.toString(result);
+            try {
+                // An ArithmeticException is thrown if this BigDecimal has a 
+                // nonzero fractional part.
+                visualResult = result.toBigIntegerExact().toString();
+            } catch(ArithmeticException ae) {
+                visualResult = result.toString();
+            }
             
             state = State.ANSWER;
             
@@ -114,6 +127,8 @@ public class Calc extends Activity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        
+        mathContext = new MathContext(7, RoundingMode.DOWN);
         
         final TextView display = (TextView) findViewById(R.id.display);
         
