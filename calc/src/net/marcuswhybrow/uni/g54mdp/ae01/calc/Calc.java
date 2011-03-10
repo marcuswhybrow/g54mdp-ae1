@@ -1,42 +1,92 @@
 package net.marcuswhybrow.uni.g54mdp.ae01.calc;
 
-import android.app.Activity;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.TextView;
-import android.widget.Button;
-import android.widget.AdapterView.OnItemClickListener;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import android.view.View;
+import android.widget.TextView;
 
-import android.util.Log;
-
-public class Calc extends Activity
-{
+public class Calc {
+    
+    private static final Calc calc = null;
+    
     private enum State { INITIAL, NUM1, OPERATION, NUM2, ANSWER }
-    private enum Operation { DIVIDE, MULTIPLY, SUBTRACT, ADD }
     
     private State state = State.INITIAL;
-    private Operation operation = null;
     
     private BigDecimal previous;
     private int previousLength = 0;
     private boolean hasPeriod = false;
     
-    private Button digitButtons[];
-    private Button operationButtons[];
+    MathContext mathContext = new MathContext(7, RoundingMode.DOWN);
     
-    private Button operationEquals;
-    private Button operationDivide;
-    private Button operationMultiply;
-    private Button operationSubtract;
-    private Button operationAdd;
+    final TextView display;
     
-    private Button clear;
+    private String num1String = "";
+    private String num2String = "";
     
-    private static final String TAG = "Calc";
-    MathContext mathContext;
+    private BigDecimal num1 = null;
+    private BinaryOperation operation = null;
+    private BigDecimal num2 = null;
+    
+    private boolean currentNumHasDecimalPoint = false;
+    
+    
+    public Calc(TextView display) {
+        this.display = display;
+    }
+    
+    
+    private void updateDisplay() {
+        String operationString = (operation != null) ? operation.toString() : "";
+        display.setText(num1String + operationString + num2String);
+    }
+    
+    private void changeNum1(String num1String) {
+        this.num1String = num1String;
+        try {
+            this.num1 = new BigDecimal(num1String);
+        } catch(NumberFormatException nfe) {
+            this.num1 = null;
+        }
+    }
+    
+    private void changeNum1(BigDecimal num1) {
+        this.num1 = num1;
+        try {
+            this.num1String = num1.toBigIntegerExact().toString();
+        } catch(ArithmeticException ae) {
+            this.num1String = num1.toString();
+        }
+    }
+    
+    private void changeNum2(String num2String) {
+        this.num2String = num2String;
+        try {
+            this.num2 = new BigDecimal(num2String);
+        } catch(NumberFormatException nfe) {
+            this.num2 = null;
+        }
+    }
+    
+    private void changeNum2(BigDecimal num2) {
+        this.num2 = num2;
+        try {
+            this.num2String = num2.toBigIntegerExact().toString();
+        } catch(ArithmeticException ae) {
+            this.num2String = num2.toString();
+        }
+    }
+    
+    private void changeOperation(BinaryOperation operation) {
+        this.operation = operation;
+    }
+    
+    
+    private BigDecimal getAnswer() {
+        return this.operation.evaluate(this.num1, this.num2);
+    }
+    
     
     private void setPrevious(CharSequence s) {
         if (s.length() > 0)
@@ -44,211 +94,87 @@ public class Calc extends Activity
         this.previousLength = s.length();
     }
     
-    private CharSequence clearDisplay(CharSequence t) {
+    public void selectOperation(char operation) {
+        selectOperation(OperationFactory.get().getOperation(operation));
+    }
+    
+    public void selectOperation(BinaryOperation operation) {
+        if (state != State.INITIAL) {
+            if (state == State.NUM2) {
+                this.changeNum1(this.getAnswer());
+                this.changeNum2("");
+            }
+        
+            this.changeOperation(operation);
+            state = State.OPERATION;
+            this.updateDisplay();
+        }
+    }
+    
+    
+    public void selectDigit(char c) {
         switch(state) {
             case INITIAL:
-                // do nothing
+            case ANSWER:
+                state = State.NUM1;
+                this.changeNum1("");
+                this.currentNumHasDecimalPoint = false;
+            case NUM1:
+                if (c != '.' || this.currentNumHasDecimalPoint == false)
+                    this.changeNum1(this.num1String + Character.toString(c));
+                if (c == '.')
+                    this.currentNumHasDecimalPoint = true;
                 break;
             case OPERATION:
-                operation = null;
-                state = State.NUM1;
-                // no break here!
-                setPrevious("");
-            case NUM1:
+                state = State.NUM2;
+                this.currentNumHasDecimalPoint = false;
             case NUM2:
-                if (t.toString().length() > 0) {
-                    String s = t.toString().substring(0, t.length()-1);
-                    if (state == State.NUM2) {
-                        Character c = s.charAt(s.length() - 1);
-                        if (!(Character.isDigit(c) || c == '.')) {
-                            state = State.OPERATION;
-                        }
-                    }
-                    return s;
+                if (c != '.' || this.currentNumHasDecimalPoint == false)
+                    this.changeNum2(this.num2String + Character.toString(c));
+                if (c == '.')
+                    this.currentNumHasDecimalPoint = true;
+                break;
+        }
+        
+        this.updateDisplay();
+    }
+    
+    public void selectClear() {
+        switch(state) {
+            case NUM1:
+                if (this.num1String.length() > 0)
+                    this.changeNum1(this.num1String.substring(0, this.num1String.length() - 1));
+                break;
+            case NUM2:
+                if (this.num2String.length() > 1)
+                    this.changeNum2(this.num2String.substring(0, this.num2String.length() - 1));
+                else {
+                    this.changeNum2("");
+                    state = State.OPERATION;
                 }
                 break;
+            case OPERATION:
+                this.changeOperation(null);
+                state = State.NUM1;
+                break;
             case ANSWER:
-                return "";
+                this.changeNum1("");
+                state = State.NUM1;
         }
-        return t;
+        this.updateDisplay();
     }
     
-    private CharSequence getAnswer(CharSequence cs) {
+    public void selectEquals() {
         if (state == State.NUM2) {
-            Log.d(TAG, "display: " + cs);
-            BigDecimal current = new BigDecimal(cs.toString().substring(previousLength+1));
-            BigDecimal result = null;
-            switch(operation) {
-                case DIVIDE:
-                    try {
-                        result = previous.divide(current, this.mathContext);
-                    } catch(ArithmeticException ae) {
-                        state = State.INITIAL;
-                        hasPeriod = false;
-                        return "∞";
-                    }
-                    break;
-                case MULTIPLY:
-                    result = previous.multiply(current, this.mathContext);
-                    break;
-                case SUBTRACT:
-                    result = previous.subtract(current, this.mathContext);
-                    break;
-                case ADD:
-                    result = previous.add(current, this.mathContext);
-                    break;
-            }
-            
-            String visualResult;
-            try {
-                // An ArithmeticException is thrown if this BigDecimal has a 
-                // nonzero fractional part.
-                visualResult = result.toBigIntegerExact().toString();
-            } catch(ArithmeticException ae) {
-                visualResult = result.toString();
-            }
-            
-            state = State.ANSWER;
-            
-            if ("Infinity".equals(visualResult)) {
-                visualResult = "∞";
+            BigDecimal answer = this.getAnswer();
+            this.changeNum1(answer);
+            this.changeNum2("");
+            this.changeOperation(null);
+            if (answer instanceof BinaryOperation.BigDecimalInfinity)
                 state = State.INITIAL;
-            }
-            
-            hasPeriod = false;
-            return visualResult;
+            else
+                state = State.ANSWER;
+            this.updateDisplay();
         }
-        return cs;
-    }
-    
-    /** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-        
-        mathContext = new MathContext(7, RoundingMode.DOWN);
-        
-        final TextView display = (TextView) findViewById(R.id.display);
-        
-        digitButtons = new Button[] {
-            (Button) findViewById(R.id.digit0),
-            (Button) findViewById(R.id.digit1),
-            (Button) findViewById(R.id.digit2),
-            (Button) findViewById(R.id.digit3),
-            (Button) findViewById(R.id.digit4),
-            (Button) findViewById(R.id.digit5),
-            (Button) findViewById(R.id.digit6),
-            (Button) findViewById(R.id.digit7),
-            (Button) findViewById(R.id.digit8),
-            (Button) findViewById(R.id.digit9),
-            (Button) findViewById(R.id.digitPeriod)
-        };
-        
-        operationEquals = (Button) findViewById(R.id.operationEquals);
-        operationDivide = (Button) findViewById(R.id.operationDivide);
-        operationMultiply = (Button) findViewById(R.id.operationMultiply);
-        operationSubtract = (Button) findViewById(R.id.operationSubtract);
-        operationAdd = (Button) findViewById(R.id.operationAdd);
-        
-        clear = (Button) findViewById(R.id.clear);
-        
-        operationButtons = new Button[] {
-            operationDivide,
-            operationMultiply,
-            operationSubtract,
-            operationAdd
-        };
-        
-        for (Button button : digitButtons) {
-            button.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    Button b = (Button) v;
-                    CharSequence s = b.getText();
-                    if (! ".".equals(s) || hasPeriod == false) {
-                        if (".".equals(s))
-                            hasPeriod = true;
-                        switch(state) {
-                            case INITIAL:
-                            case ANSWER:
-                                display.setText(s);
-                                break;
-                            case OPERATION:
-                                state = State.NUM2;
-                                display.append(s);
-                                break;
-                            case NUM1:
-                            case NUM2:
-                                display.append(s);
-                                break;
-                        }
-                        if (state != State.NUM1 && state != State.NUM2)
-                            state = State.NUM1;
-                    }
-                }
-            });
-        }
-        
-        for (Button button : operationButtons) {
-            button.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    Button b = (Button) v;
-                    if (display.getText().length() > 0) {
-                        CharSequence operator = b.getText();
-                        
-                        if (state == State.NUM2) {
-                            display.setText(getAnswer(display.getText()));
-                        }
-                        
-                        switch (state) {
-                            case NUM1:
-                            case NUM2:
-                            case ANSWER:
-                                setPrevious(display.getText());
-                                display.append(operator);
-                            
-                                state = State.OPERATION;
-                                break;
-                            case OPERATION:
-                                String p = display.getText().toString();
-                                display.setText(p.substring(0, p.length()-1) + b.getText());
-                                break;
-                        }
-                    
-                        if (previousLength > 0) {
-                            switch(operator.toString().charAt(0)) {
-                                case '÷':
-                                    operation = Operation.DIVIDE;
-                                    break;
-                                case '×':
-                                    operation = Operation.MULTIPLY;
-                                    break;
-                                case '−':
-                                    operation = Operation.SUBTRACT;
-                                    break;
-                                case '+':
-                                    operation = Operation.ADD;
-                                    break;
-                            }
-                        }
-                    
-                        hasPeriod = false;
-                    }
-                }
-            });
-        }
-        
-        operationEquals.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                display.setText(getAnswer(display.getText()));
-            }
-        });
-        
-        clear.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                display.setText(clearDisplay(display.getText()));
-            }
-        });
     }
 }
